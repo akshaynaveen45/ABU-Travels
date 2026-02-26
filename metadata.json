@@ -1,0 +1,5 @@
+{
+  "name": "ABU Travels",
+  "description": "Premium taxi booking service in Visakhapatnam by ABU Travels",
+  "requestFramePermissions": ["geolocation"]
+}
