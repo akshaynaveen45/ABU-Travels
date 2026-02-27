@@ -24,6 +24,7 @@ db.exec(`
 async function startServer() {
   const app = express();
   const PORT = parseInt(process.env.PORT || "3000", 10);
+  console.log(`Attempting to start server on port ${PORT}...`);
 
   app.use(express.json());
 
@@ -74,7 +75,8 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`🚀 Server successfully started and listening on 0.0.0.0:${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   });
 }
 
