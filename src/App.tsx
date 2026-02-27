@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   MapPin, 
@@ -15,16 +16,22 @@ import {
   Mail,
   Instagram,
   Facebook,
-  Twitter
+  Twitter,
+  LayoutDashboard,
+  LogOut,
+  RefreshCw,
+  Trash2
 } from 'lucide-react';
 
 // Types
 interface BookingData {
+  id?: number;
   pickup: string;
   destination: string;
   date: string;
   time: string;
   carType: string;
+  created_at?: string;
 }
 
 const CAR_TYPES = [
@@ -33,7 +40,134 @@ const CAR_TYPES = [
   { id: 'suv', name: 'Luxury SUV', price: '₹25/km', icon: Car },
 ];
 
-export default function App() {
+// --- ADMIN DASHBOARD COMPONENT ---
+function AdminDashboard() {
+  const [bookings, setBookings] = useState<BookingData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+
+  const fetchBookings = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/bookings/all');
+      const data = await response.json();
+      setBookings(data);
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-slate-50 pt-24 pb-12 px-6 md:px-12">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+              <LayoutDashboard className="text-[#D4AF37]" />
+              Admin Dashboard
+            </h1>
+            <p className="text-slate-500 mt-1">Manage all your taxi bookings in one place.</p>
+          </div>
+          <div className="flex gap-3">
+            <button 
+              onClick={fetchBookings}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition-all"
+            >
+              <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+              Refresh
+            </button>
+            <button 
+              onClick={() => navigate('/')}
+              className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-slate-800 transition-all"
+            >
+              <LogOut size={16} />
+              Exit Admin
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50 border-bottom border-slate-200">
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">ID</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Pickup</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Destination</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Date & Time</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Car Type</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500">Booked On</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-slate-400">Loading bookings...</td>
+                  </tr>
+                ) : bookings.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-slate-400">No bookings found yet.</td>
+                  </tr>
+                ) : (
+                  bookings.map((booking) => (
+                    <tr key={booking.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-6 py-4 text-sm font-mono text-slate-400">#{booking.id}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                          <MapPin size={14} className="text-slate-400" />
+                          {booking.pickup}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                          <MapPin size={14} className="text-[#D4AF37]" />
+                          {booking.destination}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2 text-sm">
+                            <Calendar size={14} className="text-slate-400" />
+                            {booking.date}
+                          </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <Clock size={14} className="text-slate-400" />
+                            {booking.time}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          booking.carType === 'suv' ? 'bg-amber-50 text-amber-700' : 
+                          booking.carType === 'premium' ? 'bg-indigo-50 text-indigo-700' : 
+                          'bg-slate-100 text-slate-700'
+                        }`}>
+                          {booking.carType}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-xs text-slate-400">
+                        {booking.created_at ? new Date(booking.created_at).toLocaleString() : '-'}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- LANDING PAGE COMPONENT ---
+function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [bookingData, setBookingData] = useState<BookingData>({
     pickup: '',
@@ -72,19 +206,22 @@ export default function App() {
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-black text-white px-6 py-4 md:px-12">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2">
             <div className="w-8 h-8 bg-[#D4AF37] rounded-sm flex items-center justify-center">
               <Car size={20} className="text-black" />
             </div>
             <span className="text-xl font-bold tracking-tight">ABU TRAVELS</span>
-          </div>
+          </Link>
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-8 text-sm font-medium">
             <a href="#" className="hover:text-[#D4AF37] transition-colors">Ride</a>
             <a href="#" className="hover:text-[#D4AF37] transition-colors">Drive</a>
             <a href="#" className="hover:text-[#D4AF37] transition-colors">Business</a>
-            <a href="#" className="hover:text-[#D4AF37] transition-colors">About</a>
+            <Link to="/admin" className="hover:text-[#D4AF37] transition-colors flex items-center gap-1">
+              <LayoutDashboard size={14} />
+              Admin
+            </Link>
           </div>
 
           <div className="hidden md:flex items-center gap-4">
@@ -109,10 +246,10 @@ export default function App() {
             className="fixed inset-0 z-40 bg-black text-white pt-24 px-6 md:hidden"
           >
             <div className="flex flex-col gap-6 text-2xl font-bold">
-              <a href="#" onClick={() => setIsMenuOpen(false)}>Ride</a>
+              <Link to="/" onClick={() => setIsMenuOpen(false)}>Ride</Link>
               <a href="#" onClick={() => setIsMenuOpen(false)}>Drive</a>
               <a href="#" onClick={() => setIsMenuOpen(false)}>Business</a>
-              <a href="#" onClick={() => setIsMenuOpen(false)}>About</a>
+              <Link to="/admin" onClick={() => setIsMenuOpen(false)}>Admin Dashboard</Link>
               <hr className="border-white/10" />
               <button className="w-full py-4 bg-white text-black rounded-xl">Sign up</button>
               <button className="w-full py-4 border border-white/20 rounded-xl">Log in</button>
@@ -392,5 +529,16 @@ export default function App() {
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+      </Routes>
+    </Router>
   );
 }
